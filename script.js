@@ -272,6 +272,14 @@ const AURAS = [
         color: "#fef08a",
         coinBonus: 20000,
         desc: { ru: "Небесный свет озаряет персонажа, даруя ему нимб и ангельские крылья", en: "Heavenly light shines upon the character, granting a halo and angelic wings" }
+    },
+    {
+        id: "earth",
+        name: { ru: "Земная Аура", en: "Earth Aura" },
+        chance: 10000,
+        color: "#3b82f6",
+        coinBonus: 50000,
+        desc: { ru: "Превращает голову в Землю с континентами, на плечах вырастают горы, а на груди — каменная броня", en: "Turns head into Earth, grows mountains on shoulders, and places rock armor on chest" }
     }
 ];
 
@@ -454,7 +462,8 @@ const ACHIEVEMENTS = [
     { id: "rolls_10000", tier: "rolls", count: 10000, name: { ru: "Кто ты, воин...?", en: "Who are you, warrior...?" }, desc: { ru: "Сделать 10000 прокрутов", en: "Roll 10000 times" } },
 
     // Secret Achievement
-    { id: "kaweps", tier: "special", count: 14, name: { ru: "KAWEPS", en: "KAWEPS" }, desc: { ru: "Выбить все ауры в игре.", en: "Obtain all auras in the game." } }
+    { id: "kaweps", tier: "special", count: 15, name: { ru: "KAWEPS", en: "KAWEPS" }, desc: { ru: "Выбить все ауры в игре.", en: "Obtain all auras in the game." } },
+    { id: "earth_1", tier: "earth", count: 1, name: { ru: "Повелитель Земли", en: "Lord of the Earth" }, desc: { ru: "Получить Земную Ауру (1/10000)", en: "Obtain the Earth Aura (1/10000)" } }
 ];
 
 function checkAchievements() {
@@ -1156,6 +1165,91 @@ class SoundEngine {
                 osc.start(bellTime);
                 osc.stop(bellTime + 0.3);
             }
+        } else if (tier === "earth") {
+            // Earth Aura Sound: Organic rumbling, rising tension, and a massive impact/sub drop at 5.4s
+            mainGain.gain.setValueAtTime(0.25, now);
+            mainGain.gain.exponentialRampToValueAtTime(0.001, now + 7.0);
+
+            // 1. Initial crystal chime for the star (0s to 1.5s)
+            const chimes = [392.00, 523.25, 659.25, 783.99]; // G C E G
+            chimes.forEach((f, i) => {
+                const osc = this.ctx.createOscillator();
+                const chimeGain = this.ctx.createGain();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(f, now + i * 0.15);
+                chimeGain.gain.setValueAtTime(0, now);
+                chimeGain.gain.linearRampToValueAtTime(0.05, now + i * 0.15 + 0.05);
+                chimeGain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 1.2);
+                osc.connect(chimeGain);
+                chimeGain.connect(mainGain);
+                osc.start(now + i * 0.15);
+                osc.stop(now + i * 0.15 + 1.2);
+            });
+
+            // 2. Low organic rumble (rising pitch/tension from 1.5s to 5.4s)
+            const rumbleOsc = this.ctx.createOscillator();
+            const rumbleGain = this.ctx.createGain();
+            const rumbleFilter = this.ctx.createBiquadFilter();
+            rumbleOsc.type = "triangle";
+            rumbleOsc.frequency.setValueAtTime(60, now + 1.5);
+            rumbleOsc.frequency.exponentialRampToValueAtTime(180, now + 5.4);
+
+            rumbleGain.gain.setValueAtTime(0, now);
+            rumbleGain.gain.linearRampToValueAtTime(0.1, now + 2.5);
+            rumbleGain.gain.exponentialRampToValueAtTime(0.001, now + 5.5);
+
+            rumbleFilter.type = "lowpass";
+            rumbleFilter.frequency.setValueAtTime(150, now);
+
+            rumbleOsc.connect(rumbleFilter);
+            rumbleFilter.connect(rumbleGain);
+            rumbleGain.connect(mainGain);
+            rumbleOsc.start(now + 1.5);
+            rumbleOsc.stop(now + 5.5);
+
+            // 3. Massive Stone Impact explosion at 5.4s
+            const impactTime = now + 5.4;
+            // Sub drop
+            const subOsc = this.ctx.createOscillator();
+            const subGain = this.ctx.createGain();
+            subOsc.type = "sine";
+            subOsc.frequency.setValueAtTime(120, impactTime);
+            subOsc.frequency.exponentialRampToValueAtTime(25, impactTime + 1.2);
+
+            subGain.gain.setValueAtTime(0, now);
+            subGain.gain.setValueAtTime(0.4, impactTime);
+            subGain.gain.exponentialRampToValueAtTime(0.001, impactTime + 1.2);
+
+            subOsc.connect(subGain);
+            subGain.connect(mainGain);
+            subOsc.start(impactTime);
+            subOsc.stop(impactTime + 1.2);
+
+            // Heavy lowpass noise burst representing stone smash
+            const bufferSize = this.ctx.sampleRate * 1.5;
+            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = buffer;
+
+            const expFilter = this.ctx.createBiquadFilter();
+            expFilter.type = "lowpass";
+            expFilter.frequency.setValueAtTime(600, impactTime);
+            expFilter.frequency.exponentialRampToValueAtTime(60, impactTime + 1.5);
+
+            const expNoiseGain = this.ctx.createGain();
+            expNoiseGain.gain.setValueAtTime(0, now);
+            expNoiseGain.gain.setValueAtTime(0.35, impactTime);
+            expNoiseGain.gain.exponentialRampToValueAtTime(0.001, impactTime + 1.5);
+
+            noise.connect(expFilter);
+            expFilter.connect(expNoiseGain);
+            expNoiseGain.connect(mainGain);
+            noise.start(impactTime);
+            noise.stop(impactTime + 1.5);
         }
     }
 
@@ -1319,6 +1413,233 @@ function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius, color) {
     ctx.fill();
 }
 
+function drawStarRevealAnimation(c, cx, cy, elapsed, color) {
+    if (elapsed < 1500) {
+        c.save();
+        const progress = elapsed / 1500;
+        const scale = Math.sin(progress * Math.PI / 2);
+        const rotation = elapsed * 0.005;
+        
+        c.translate(cx, cy);
+        c.rotate(rotation);
+        
+        c.shadowColor = color;
+        c.shadowBlur = 30 * scale;
+        
+        drawStar(c, 0, 0, 8, 45 * scale, 20 * scale, color);
+        drawStar(c, 0, 0, 8, 20 * scale, 8 * scale, "#ffffff");
+        
+        c.restore();
+    }
+}
+
+function drawRock(c, rx, ry, rSize) {
+    c.save();
+    c.fillStyle = "#854d0e";
+    c.strokeStyle = "#451a03";
+    c.lineWidth = 1.5;
+    c.beginPath();
+    c.moveTo(rx - rSize, ry);
+    c.lineTo(rx - rSize * 0.5, ry - rSize * 0.8);
+    c.lineTo(rx + rSize * 0.5, ry - rSize * 0.7);
+    c.lineTo(rx + rSize, ry);
+    c.lineTo(rx + rSize * 0.4, ry + rSize * 0.8);
+    c.lineTo(rx - rSize * 0.6, ry + rSize * 0.7);
+    c.closePath();
+    c.fill();
+    c.stroke();
+    c.restore();
+}
+
+function drawEarthCharacter(c, x, y, elapsed, skin) {
+    const torsoY = y - 14;
+    const neckY = y - 56;
+    const headY = y - 68;
+    const headRadius = 10;
+
+    c.save();
+    c.strokeStyle = skin.color;
+    c.lineWidth = 5.5;
+    c.lineCap = "round";
+    c.lineJoin = "round";
+
+    c.beginPath();
+    c.moveTo(x, torsoY);
+    c.lineTo(x - 12, y - 5);
+    c.lineTo(x - 16, y);
+    c.moveTo(x, torsoY);
+    c.lineTo(x + 12, y - 5);
+    c.lineTo(x + 16, y);
+    c.stroke();
+
+    c.beginPath();
+    c.moveTo(x, torsoY);
+    c.lineTo(x, neckY);
+    c.stroke();
+
+    c.beginPath();
+    const armSwing = earthAnimationActive ? 0 : Math.sin(Date.now() * 0.002) * 4;
+    c.moveTo(x, neckY + 8);
+    c.lineTo(x - 18, neckY + 20 + armSwing);
+    c.lineTo(x - 14, neckY + 38 + armSwing * 0.5);
+    c.moveTo(x, neckY + 8);
+    c.lineTo(x + 18, neckY + 20 - armSwing);
+    c.lineTo(x + 14, neckY + 38 - armSwing * 0.5);
+    c.stroke();
+
+    if (elapsed >= 4000) {
+        let rockScale = 1.0;
+        if (earthAnimationActive && elapsed < 4800) {
+            rockScale = (elapsed - 4000) / 800;
+        }
+        
+        if (rockScale > 0) {
+            const sizeArms = 4 * rockScale;
+            const sizeLegs = 5 * rockScale;
+            drawRock(c, x - 18, neckY + 20 + armSwing, sizeArms);
+            drawRock(c, x - 14, neckY + 38 + armSwing * 0.5, sizeArms);
+            drawRock(c, x + 18, neckY + 20 - armSwing, sizeArms);
+            drawRock(c, x + 14, neckY + 38 - armSwing * 0.5, sizeArms);
+            drawRock(c, x - 12, y - 5, sizeLegs);
+            drawRock(c, x - 16, y, sizeLegs);
+            drawRock(c, x + 12, y - 5, sizeLegs);
+            drawRock(c, x + 16, y, sizeLegs);
+        }
+    }
+
+    if (elapsed >= 3200) {
+        let mtProgress = 1.0;
+        if (earthAnimationActive && elapsed < 4000) {
+            mtProgress = (elapsed - 3200) / 800;
+        }
+        
+        if (mtProgress > 0) {
+            c.save();
+            c.fillStyle = "#78350f";
+            c.beginPath();
+            c.moveTo(x - 14, neckY + 14);
+            c.lineTo(x - 8, neckY + 14 - 12 * mtProgress);
+            c.lineTo(x - 2, neckY + 14);
+            c.closePath();
+            c.fill();
+            c.fillStyle = "#ffffff";
+            c.beginPath();
+            c.moveTo(x - 10, neckY + 14 - 8 * mtProgress);
+            c.lineTo(x - 8, neckY + 14 - 12 * mtProgress);
+            c.lineTo(x - 6, neckY + 14 - 8 * mtProgress);
+            c.closePath();
+            c.fill();
+
+            c.fillStyle = "#78350f";
+            c.beginPath();
+            c.moveTo(x + 2, neckY + 14);
+            c.lineTo(x + 8, neckY + 14 - 12 * mtProgress);
+            c.lineTo(x + 14, neckY + 14);
+            c.closePath();
+            c.fill();
+            c.fillStyle = "#ffffff";
+            c.beginPath();
+            c.moveTo(x + 6, neckY + 14 - 8 * mtProgress);
+            c.lineTo(x + 8, neckY + 14 - 12 * mtProgress);
+            c.lineTo(x + 10, neckY + 14 - 8 * mtProgress);
+            c.closePath();
+            c.fill();
+            c.restore();
+        }
+    }
+
+    if (elapsed >= 4800) {
+        let stoneProgress = 1.0;
+        let stoneYOffset = 0;
+        if (earthAnimationActive && elapsed < 5400) {
+            const dropRatio = (elapsed - 4800) / 600;
+            stoneProgress = dropRatio;
+            stoneYOffset = -50 * (1 - dropRatio);
+        }
+
+        if (stoneProgress > 0) {
+            c.save();
+            c.translate(0, stoneYOffset);
+            
+            c.fillStyle = "#6b7280";
+            c.strokeStyle = "#374151";
+            c.lineWidth = 2;
+            c.beginPath();
+            c.moveTo(x - 10, neckY + 12);
+            c.lineTo(x + 10, neckY + 12);
+            c.lineTo(x + 8, neckY + 32);
+            c.lineTo(x, neckY + 40);
+            c.lineTo(x - 8, neckY + 32);
+            c.closePath();
+            c.fill();
+            c.stroke();
+
+            c.strokeStyle = "#1f2937";
+            c.lineWidth = 1;
+            c.beginPath();
+            c.moveTo(x - 4, neckY + 18);
+            c.lineTo(x + 2, neckY + 24);
+            c.lineTo(x - 2, neckY + 30);
+            c.stroke();
+            
+            c.restore();
+        }
+    }
+
+    c.fillStyle = skin.color;
+    c.beginPath();
+    c.arc(x, headY, headRadius, 0, Math.PI * 2);
+    c.fill();
+
+    if (elapsed >= 1500) {
+        const blueAlpha = earthAnimationActive ? Math.min(1, (elapsed - 1500) / 800) : 1;
+        c.save();
+        c.globalAlpha = blueAlpha;
+        c.fillStyle = "#1e40af";
+        c.beginPath();
+        c.arc(x, headY, headRadius, 0, Math.PI * 2);
+        c.fill();
+        c.restore();
+    }
+
+    if (elapsed >= 2300) {
+        let contProgress = 1.0;
+        if (earthAnimationActive && elapsed < 3200) {
+            contProgress = (elapsed - 2300) / 900;
+        }
+        
+        if (contProgress > 0) {
+            c.save();
+            c.beginPath();
+            c.arc(x, headY, headRadius, 0, Math.PI * 2);
+            c.clip();
+
+            c.fillStyle = "#16a34a";
+            c.globalAlpha = contProgress;
+            
+            c.beginPath();
+            c.arc(x - 3, headY - 2, 5 * contProgress, 0, Math.PI * 2);
+            c.fill();
+
+            c.beginPath();
+            c.arc(x + 4, headY + 3, 4 * contProgress, 0, Math.PI * 2);
+            c.fill();
+
+            c.beginPath();
+            c.arc(x + 2, headY - 5, 3 * contProgress, 0, Math.PI * 2);
+            c.fill();
+
+            c.beginPath();
+            c.arc(x - 5, headY + 5, 3 * contProgress, 0, Math.PI * 2);
+            c.fill();
+
+            c.restore();
+        }
+    }
+
+    c.restore();
+}
+
 let particles = [];
 let windCurves = []; // Helper for wind spirals
 
@@ -1366,6 +1687,11 @@ let demonHasTriggered = false;
 let angelAnimationActive = false;
 let angelAnimationTimer = 0;
 let angelHasTriggered = false;
+
+// Earth Aura Reveal Animation State
+let earthAnimationActive = false;
+let earthAnimationTimer = 0;
+let earthHasTriggered = false;
 
 
 // Main animation loop
@@ -1694,6 +2020,80 @@ function animate(timestamp) {
         }
     }
 
+    // Check Earth Animation Events
+    if (earthAnimationActive) {
+        const elapsed = Date.now() - earthAnimationTimer;
+        
+        // Spawn stone debris during the drop phase or when it lands
+        if (elapsed >= 4800 && elapsed < 5400) {
+            if (Math.random() < 0.15) {
+                particles.push(new Particle(
+                    charX + (Math.random() * 40 - 20),
+                    charY - 60,
+                    "#6b7280",
+                    {
+                        vx: Math.random() * 0.4 - 0.2,
+                        vy: Math.random() * 2 + 1,
+                        size: Math.random() * 3 + 1,
+                        decay: 0.03
+                    }
+                ));
+            }
+        }
+
+        // Trigger major splash at 5400ms
+        if (elapsed >= 5400 && !earthHasTriggered) {
+            earthHasTriggered = true;
+            triggerShake(60); // Strong impact shake!
+            
+            // Spawn massive explosion of stone debris, dirt, green leaves, and blue magic sparks
+            for (let i = 0; i < 35; i++) {
+                particles.push(new Particle(
+                    charX, charY - 30,
+                    Math.random() < 0.5 ? "#6b7280" : "#854d0e",
+                    {
+                        vx: (Math.random() - 0.5) * 12,
+                        vy: -Math.random() * 8 - 3,
+                        size: Math.random() * 6 + 3,
+                        decay: 0.02
+                    }
+                ));
+            }
+            for (let i = 0; i < 25; i++) {
+                particles.push(new Particle(
+                    charX, charY - 30,
+                    "#16a34a",
+                    {
+                        vx: (Math.random() - 0.5) * 10,
+                        vy: -Math.random() * 6 - 2,
+                        size: Math.random() * 6 + 3,
+                        shape: "leaf",
+                        decay: 0.015
+                    }
+                ));
+            }
+            for (let i = 0; i < 30; i++) {
+                particles.push(new Particle(
+                    charX, charY - 30,
+                    "#3b82f6",
+                    {
+                        vx: (Math.random() - 0.5) * 14,
+                        vy: -Math.random() * 10 - 2,
+                        size: Math.random() * 5 + 2,
+                        shape: "star",
+                        decay: 0.02
+                    }
+                ));
+            }
+
+            updateUI();
+        }
+
+        if (elapsed > 6000) {
+            earthAnimationActive = false;
+        }
+    }
+
     // 1. Draw Background Stars/Glows
     drawBackgroundStars(w, h, timestamp);
 
@@ -1773,6 +2173,13 @@ function animate(timestamp) {
             angelGoldShift = 0.25 * (1 - (elapsed - 4500) / 1000);
             angelLightIntensity = 1.0 - (elapsed - 4500) / 1000;
         }
+    } else if (earthAnimationActive) {
+        const elapsed = Date.now() - earthAnimationTimer;
+        if (elapsed < 5400) {
+            dimBgAlpha = 0.95;
+        } else if (elapsed < 6000) {
+            dimBgAlpha = 0.95 * (1 - (elapsed - 5400) / 600);
+        }
     }
 
     if (dimBgAlpha > 0) {
@@ -1788,6 +2195,11 @@ function animate(timestamp) {
         }
         ctx.fillRect(0, 0, w, h);
         ctx.restore();
+    }
+
+    if (earthAnimationActive) {
+        const elapsed = Date.now() - earthAnimationTimer;
+        drawStarRevealAnimation(ctx, charX, charY - 30, elapsed, "#3b82f6");
     }
 
     // Draw Holy Light Beam if intensity > 0
@@ -2931,6 +3343,24 @@ function drawCharacter(c, x, y) {
         }
     }
 
+    // Handle Earth Aura overrides
+    if (state.equippedAura === "earth") {
+        if (earthAnimationActive) {
+            const elapsed = Date.now() - earthAnimationTimer;
+            if (elapsed < 1500) {
+                c.restore();
+                return;
+            }
+            drawEarthCharacter(c, x, y, elapsed, skin);
+            c.restore();
+            return;
+        } else {
+            drawEarthCharacter(c, x, y, 99999, skin);
+            c.restore();
+            return;
+        }
+    }
+
     // Human Joint Coordinates relative to X, Y (feet base)
     const torsoY = y - 14;
     const neckY = y - 56;
@@ -3806,6 +4236,12 @@ function generateAuraParticles(x, y, ts) {
         if (elapsed < 2500) return;
     }
 
+    // Suppress earth particles during star and transformation phases (Phase 1 to 5)
+    if (tier === "earth" && earthAnimationActive) {
+        const elapsed = Date.now() - earthAnimationTimer;
+        if (elapsed < 5400) return;
+    }
+
     if (tier === "common") {
         // Grey cloud circles floating up
         if (Math.random() < 0.25) {
@@ -4402,6 +4838,56 @@ function generateAuraParticles(x, y, ts) {
             ));
         }
     }
+
+    else if (tier === "earth") {
+        // Soft green/blue mist/dust particles rising from ground
+        if (Math.random() < 0.25) {
+            particles.push(new Particle(
+                x + (Math.random() * 50 - 25),
+                y + (Math.random() * 10 - 5),
+                Math.random() < 0.5 ? "rgba(59, 130, 246, 0.25)" : "rgba(34, 197, 94, 0.25)",
+                {
+                    vx: Math.random() * 0.6 - 0.3,
+                    vy: -Math.random() * 0.4 - 0.1,
+                    size: Math.random() * 8 + 5,
+                    growth: 0.1,
+                    decay: 0.015
+                }
+            ));
+        }
+        // Small brown rocks/pebbles rising/spawning
+        if (Math.random() < 0.15) {
+            particles.push(new Particle(
+                x + (Math.random() * 40 - 20),
+                y - (Math.random() * 15),
+                "#854d0e",
+                {
+                    vx: Math.random() * 1.0 - 0.5,
+                    vy: -Math.random() * 1.2 - 0.4,
+                    size: Math.random() * 3 + 1.5,
+                    decay: 0.02,
+                    customDraw: function (c, size, color) {
+                        drawRock(c, 0, 0, size);
+                    }
+                }
+            ));
+        }
+        // Swirling green leaves
+        if (Math.random() < 0.15) {
+            particles.push(new Particle(
+                x + (Math.random() * 50 - 25),
+                y - 10 - (Math.random() * 50),
+                "#16a34a",
+                {
+                    vx: Math.random() * 1.2 - 0.6,
+                    vy: -Math.random() * 0.8 - 0.4,
+                    size: Math.random() * 4 + 2,
+                    shape: "leaf",
+                    decay: 0.015
+                }
+            ));
+        }
+    }
 }
 
 
@@ -4695,6 +5181,27 @@ function triggerRoll() {
                     }, 800);
                 }
             }
+        } else if (rolled.id === "earth") {
+            if (!wasAlreadyEquipped && !skipCutscene) {
+                earthAnimationActive = true;
+                earthAnimationTimer = Date.now();
+                earthHasTriggered = false;
+                animDuration = 6000;
+
+                document.body.classList.add("earth-cutscene-active");
+
+                setTimeout(() => {
+                    document.body.classList.remove("earth-cutscene-active");
+                    if (!skipPopup) showSplashOverlay(rolled);
+                }, 6000);
+            } else {
+                animDuration = 800;
+                if (!skipPopup) {
+                    setTimeout(() => {
+                        showSplashOverlay(rolled);
+                    }, 800);
+                }
+            }
         } else if (rolled.chance >= 32) {
             triggerShake(12);
         }
@@ -4877,6 +5384,10 @@ function updateUI() {
                 labelDisplay.className = "equipped-aura-label aura-c-none";
             } else if (auraObj.id === "angel" && angelAnimationActive && (Date.now() - angelAnimationTimer < 3000)) {
                 // Hide angel text until descent phase starts at 3000ms
+                labelDisplay.textContent = "";
+                labelDisplay.className = "equipped-aura-label aura-c-none";
+            } else if (auraObj.id === "earth" && earthAnimationActive && (Date.now() - earthAnimationTimer < 5400)) {
+                // Hide earth text until final stone assembly and splash at 5400ms
                 labelDisplay.textContent = "";
                 labelDisplay.className = "equipped-aura-label aura-c-none";
             } else {

@@ -36,6 +36,7 @@
     --color-malware: #ff0055;
     --color-demon: #ff3300;
     --color-angel: #fef08a;
+    --color-earth: #3b82f6;
 
     --font-ui: 'Outfit', sans-serif;
     --font-mono: 'Space Grotesque', sans-serif;
@@ -562,6 +563,14 @@ canvas {
     font-family: var(--font-mono);
     font-weight: 800;
 }
+.aura-c-earth {
+    color: var(--color-earth);
+    border-color: var(--color-earth);
+    box-shadow: 0 0 25px rgba(59,130,246,0.5);
+    text-shadow: 0 0 10px rgba(59,130,246,0.7);
+    font-family: var(--font-mono);
+    font-weight: 800;
+}
 
 /* Glitch, Malware, Demon & Angel Cutscene Dimming Styles */
 body.glitch-cutscene-active .game-header,
@@ -583,7 +592,12 @@ body.angel-cutscene-active .game-header,
 body.angel-cutscene-active .side-panel.left-panel,
 body.angel-cutscene-active .side-panel.right-panel,
 body.angel-cutscene-active .controls-panel,
-body.angel-cutscene-active #equipped-aura-display {
+body.angel-cutscene-active #equipped-aura-display,
+body.earth-cutscene-active .game-header,
+body.earth-cutscene-active .side-panel.left-panel,
+body.earth-cutscene-active .side-panel.right-panel,
+body.earth-cutscene-active .controls-panel,
+body.earth-cutscene-active #equipped-aura-display {
     opacity: 0.0;
     pointer-events: none;
     transition: opacity 1.5s ease-in-out;
