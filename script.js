@@ -382,6 +382,7 @@ function loadState() {
             console.error("Failed to load save", e);
         }
     }
+    checkAchievements();
 }
 
 function saveState() {
@@ -469,8 +470,6 @@ const ACHIEVEMENTS = [
 function checkAchievements() {
     let stateChanged = false;
     ACHIEVEMENTS.forEach(ach => {
-        if (state.unlockedAchievements[ach.id]) return;
-
         let count = 0;
         if (ach.tier === "rolls") {
             count = state.rolls;
@@ -481,19 +480,36 @@ function checkAchievements() {
         }
 
         if (count >= ach.count) {
-            state.unlockedAchievements[ach.id] = Date.now();
-            stateChanged = true;
+            if (!state.unlockedAchievements[ach.id]) {
+                state.unlockedAchievements[ach.id] = Date.now();
+                stateChanged = true;
 
-            if (ach.id === "kaweps") {
-                // Unlock and equip Mellstroy skin
-                if (!state.cosmetics.unlockedCharacters.includes("mellstroy")) {
-                    state.cosmetics.unlockedCharacters.push("mellstroy");
+                if (ach.id === "kaweps") {
+                    // Unlock and equip Mellstroy skin
+                    if (!state.cosmetics.unlockedCharacters.includes("mellstroy")) {
+                        state.cosmetics.unlockedCharacters.push("mellstroy");
+                    }
+                    state.cosmetics.equippedCharacter = "mellstroy";
                 }
-                state.cosmetics.equippedCharacter = "mellstroy";
-            }
 
-            showAchievementToast(ach);
-            sfx.playAchievement();
+                showAchievementToast(ach);
+                sfx.playAchievement();
+            }
+        } else {
+            // Relock achievement if criteria is no longer met (e.g. new auras added)
+            if (state.unlockedAchievements[ach.id]) {
+                delete state.unlockedAchievements[ach.id];
+                stateChanged = true;
+
+                if (ach.id === "kaweps") {
+                    // Lock Mellstroy skin again
+                    state.cosmetics.unlockedCharacters = state.cosmetics.unlockedCharacters.filter(c => c !== "mellstroy");
+                    // Revert equipped character to default if it was Mellstroy
+                    if (state.cosmetics.equippedCharacter === "mellstroy") {
+                        state.cosmetics.equippedCharacter = "default";
+                    }
+                }
+            }
         }
     });
 
@@ -555,10 +571,7 @@ function renderAchievements() {
 
     ACHIEVEMENTS.forEach(ach => {
         const isUnlocked = !!state.unlockedAchievements[ach.id];
-        let count = ach.tier === "rolls" ? state.rolls : (ach.id === "kaweps" ? AURAS.filter(aura => (state.unlockedAuras[aura.id] || 0) > 0).length : (state.unlockedAuras[ach.tier] || 0));
-        if (isUnlocked) {
-            count = ach.count;
-        }
+        const count = ach.tier === "rolls" ? state.rolls : (ach.id === "kaweps" ? AURAS.filter(aura => (state.unlockedAuras[aura.id] || 0) > 0).length : (state.unlockedAuras[ach.tier] || 0));
         const progressPercent = Math.min(100, (count / ach.count) * 100);
 
         const card = document.createElement("div");
