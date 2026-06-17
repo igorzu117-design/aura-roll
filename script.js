@@ -555,7 +555,10 @@ function renderAchievements() {
 
     ACHIEVEMENTS.forEach(ach => {
         const isUnlocked = !!state.unlockedAchievements[ach.id];
-        const count = ach.tier === "rolls" ? state.rolls : (ach.id === "kaweps" ? AURAS.filter(aura => (state.unlockedAuras[aura.id] || 0) > 0).length : (state.unlockedAuras[ach.tier] || 0));
+        let count = ach.tier === "rolls" ? state.rolls : (ach.id === "kaweps" ? AURAS.filter(aura => (state.unlockedAuras[aura.id] || 0) > 0).length : (state.unlockedAuras[ach.tier] || 0));
+        if (isUnlocked) {
+            count = ach.count;
+        }
         const progressPercent = Math.min(100, (count / ach.count) * 100);
 
         const card = document.createElement("div");
