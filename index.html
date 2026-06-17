@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Roll — Лотерея Аур</title>
+    <meta name="description" content="Захватывающая игра-лотерея аур. Испытайте свою удачу, крутите рулетку, улучшайте свои показатели и соберите все редкие ауры от Обычной до Изумрудной!">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesque:wght@400;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Background glow elements -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="game-container">
+        <!-- HEADER -->
+        <header class="game-header">
+            <div class="logo">
+                <i class="fa-solid fa-wand-magic-sparkles logo-icon"></i>
+                <h1>AURA ROLL</h1>
+            </div>
+            
+            <div class="stats-bar">
+                <div class="stat-card" id="rolls-card">
+                    <span class="stat-label"><i class="fa-solid fa-rotate"></i> Крутки:</span>
+                    <span class="stat-value" id="total-rolls">0</span>
+                </div>
+                <div class="stat-card" id="coins-card">
+                    <span class="stat-label"><i class="fa-solid fa-coins"></i> Монеты:</span>
+                    <span class="stat-value" id="coin-balance">0</span>
+                </div>
+                <div class="stat-card" id="luck-card">
+                    <span class="stat-label"><i class="fa-solid fa-clover"></i> Удача:</span>
+                    <span class="stat-value" id="luck-multiplier">x1.00</span>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <button id="lang-toggle-btn" class="icon-btn" title="Сменить язык / Switch Language">
+                    <i class="fa-solid fa-globe"></i>
+                </button>
+                <button id="audio-toggle-btn" class="icon-btn" title="Вкл/Выкл звук">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+                <button id="settings-btn" class="icon-btn" title="Настройки / Settings">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+                <button id="reset-btn" class="icon-btn danger" title="Сбросить прогресс">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT AREA -->
+        <div class="main-layout">
+            
+            <!-- LEFT PANEL: SHOP & UPGRADES -->
+            <aside class="panel side-panel left-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-shop"></i> <span data-i18n="shop_title">Магазин Улучшений</span></h2>
+                </div>
+                <div class="panel-content scrollable">
+                    <!-- Upgrades Section -->
+                    <div class="shop-section">
+                        <h3 data-i18n="permanent_upgrades">Постоянные улучшения</h3>
+                        
+                        <!-- Luck Upgrade -->
+                        <div class="shop-item" id="shop-luck">
+                            <div class="item-info">
+                                <div class="item-title"><span data-i18n="luck_up_title">Клевер Удачи</span> <span class="item-level" id="luck-lvl">Lvl 1</span></div>
+                                <div class="item-desc" data-i18n="luck_up_desc">Увеличивает шанс выпадения редких аур.</div>
+                            </div>
+                            <button class="buy-btn" id="buy-luck-btn">
+                                <span class="price"><i class="fa-solid fa-coins"></i> <span id="luck-price">10</span></span>
+                                <span class="btn-text" data-i18n="upgrade_btn">Улучшить</span>
+                            </button>
+                        </div>
+
+                        <!-- Speed Upgrade -->
+                        <div class="shop-item" id="shop-speed">
+                            <div class="item-info">
+                                <div class="item-title"><span data-i18n="speed_up_title">Быстрый спиннер</span> <span class="item-level" id="speed-lvl">Lvl 1</span></div>
+                                <div class="item-desc" data-i18n="speed_up_desc">Уменьшает задержку между прокрутками.</div>
+                            </div>
+                            <button class="buy-btn" id="buy-speed-btn">
+                                <span class="price"><i class="fa-solid fa-coins"></i> <span id="speed-price">15</span></span>
+                                <span class="btn-text" data-i18n="upgrade_btn">Улучшить</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Potions Section -->
+                    <div class="shop-section">
+                        <h3 data-i18n="temporary_potions">Зелья (Временные)</h3>
+                        
+                        <!-- Luck Potion -->
+                        <div class="shop-item" id="shop-potion-luck">
+                            <div class="item-info">
+                                <div class="item-title" data-i18n="potion_luck_title">Зелье Фортуны (+2.0x Удача)</div>
+                                <div class="item-desc" data-i18n="potion_luck_desc">Удваивает удачу на 60 секунд.</div>
+                                <div class="potion-timer-hint hidden" id="potion-timer-luck">Активно: <span id="potion-sec-luck">60</span>с</div>
+                            </div>
+                            <button class="buy-btn" id="buy-potion-luck-btn">
+                                <span class="price"><i class="fa-solid fa-coins"></i> 50</span>
+                                <span class="btn-text" data-i18n="buy_btn">Купить</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Customization Section -->
+                    <div class="shop-section">
+                        <h3 data-i18n="cosmetics">Косметика (Скины)</h3>
+                        
+                        <!-- Platforms -->
+                        <div class="cosmetic-group">
+                            <h4 data-i18n="platforms_title">Платформы</h4>
+                            <div class="cosmetics-grid" id="platforms-grid">
+                                <!-- Populated dynamically by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Characters -->
+                        <div class="cosmetic-group">
+                            <h4 data-i18n="characters_title">Персонажи</h4>
+                            <div class="cosmetics-grid" id="characters-grid">
+                                <!-- Populated dynamically by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- CENTER GAMEPLAY AREA -->
+            <main class="center-content">
+                <!-- Aura Canvas Container -->
+                <div class="canvas-container" id="canvas-container">
+                    <canvas id="gameCanvas"></canvas>
+                    
+                    <!-- Aura Label Display (Float overlay above human) -->
+                    <div class="equipped-aura-label" id="equipped-aura-display">
+                        <span data-i18n="no_aura_equipped">Аура не экипирована</span>
+                    </div>
+
+                    <!-- Roll Outcome Overlay (Big splash notification on Legendary roll, etc.) -->
+                    <div class="roll-splash-overlay hidden" id="splash-overlay">
+                        <div class="splash-content">
+                            <h3 data-i18n="roll_success_title">ВЫ ВЫБИЛИ</h3>
+                            <h2 id="splash-aura-name">ЛЕГЕНДАРНАЯ АУРА</h2>
+                            <p class="splash-rarity" id="splash-aura-rarity">Шанс: 1/100</p>
+                            <button class="splash-close-btn" id="splash-close-btn" data-i18n="splash_close">Отлично</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROLL CONTROLS CONTAINER -->
+                <div class="controls-panel">
+                    <div class="roll-status-bar" id="roll-status">
+                        <span data-i18n="roll_status_ready">Готов к крутке...</span>
+                    </div>
+
+                    <div class="controls-actions">
+                        <!-- Auto Roll Toggle -->
+                        <label class="toggle-container" title="Автоматически крутить ауры без перерыва">
+                            <input type="checkbox" id="auto-roll-toggle">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label" data-i18n="auto_roll">Авто-крутка</span>
+                        </label>
+
+                        <!-- Main ROLL Button -->
+                        <button class="roll-button" id="roll-btn">
+                            <span class="roll-btn-inner">
+                                <i class="fa-solid fa-dice-d20 roll-icon"></i>
+                                <span class="roll-text" data-i18n="roll_btn_text">КРУТИТЬ</span>
+                            </span>
+                        </button>
+
+                        <!-- Quick Roll Toggle -->
+                        <label class="toggle-container" title="Пропустить анимацию крутки для быстрых результатов">
+                            <input type="checkbox" id="quick-roll-toggle">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label" data-i18n="quick_roll">Быстрая крутка</span>
+                        </label>
+                    </div>
+                </div>
+            </main>
+
+            <!-- RIGHT PANEL: AURA BOOK & STATS -->
+            <aside class="panel side-panel right-panel">
+                <div class="panel-header-tabs">
+                    <button class="panel-tab-btn active" id="tab-collection" data-i18n="collection_tab_title">Книга Аур</button>
+                    <button class="panel-tab-btn" id="tab-achievements" data-i18n="achievements_tab_title">Достижения</button>
+                </div>
+                <div class="panel-content scrollable">
+                    <!-- Tab 1: Collection Content -->
+                    <div id="collection-tab-content">
+                        <div class="collection-stats">
+                            <div class="stat-row">
+                                <span data-i18n="progress_label">Собрано аур:</span>
+                                <strong id="collection-progress">0 / 13</strong>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="collection-progress-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Aura List -->
+                        <div class="aura-list" id="aura-collection-list">
+                            <!-- Populated dynamically by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Achievements Content -->
+                    <div id="achievements-tab-content" class="hidden">
+                        <div class="achievement-list" id="achievements-list">
+                            <!-- Populated dynamically by JS -->
+                        </div>
+                    </div>
+                </div>
+            </aside>
+            
+        </div>
+    </div>
+
+    <!-- Alert Modal for confirmation dialogs -->
+    <div class="modal-overlay hidden" id="reset-confirm-modal">
+        <div class="modal-content">
+            <h3 data-i18n="reset_confirm_title">Подтверждение сброса</h3>
+            <p data-i18n="reset_confirm_text">Вы уверены, что хотите полностью сбросить свой прогресс? Все ваши открытые ауры, монеты и улучшения будут стерты навсегда.</p>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" id="reset-cancel-btn" data-i18n="cancel_btn">Отмена</button>
+                <button class="modal-btn confirm" id="reset-confirm-btn" data-i18n="confirm_btn">Сбросить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay hidden" id="settings-modal">
+        <div class="modal-content settings-modal-content">
+            <h3 data-i18n="settings_title">Настройки</h3>
+            
+            <div class="settings-tabs">
+                <button class="settings-tab-btn active" id="settings-tab-general" data-i18n="settings_tab_general">Основное</button>
+                <button class="settings-tab-btn" id="settings-tab-auras" data-i18n="settings_tab_auras">Ауры</button>
+            </div>
+            
+            <!-- General Settings Section -->
+            <div class="settings-section-content" id="settings-general-content">
+                <div class="settings-row">
+                    <div class="settings-label-group">
+                        <span class="settings-label" data-i18n="settings_sound">Звуки</span>
+                        <span class="settings-desc" data-i18n="settings_sound_desc">Включить или отключить звуковые эффекты в игре</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="settings-sound-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label-group">
+                        <span class="settings-label" data-i18n="settings_effects">Эффекты частиц</span>
+                        <span class="settings-desc" data-i18n="settings_effects_desc">Включить отображение аур и эффектов спинов</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="settings-effects-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Auras Settings Section -->
+            <div class="settings-section-content hidden" id="settings-auras-content">
+                <div class="auras-settings-list scrollable" id="settings-auras-list">
+                    <!-- Populated dynamically by JS -->
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="modal-btn confirm" id="settings-close-btn" data-i18n="close_btn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script loading -->
+    <script src="script.js"></script>
+</body>
+</html>
